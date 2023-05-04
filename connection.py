@@ -10,6 +10,9 @@ KEY_FILE_LOCATION = 'path/to/key.json'
 SCOPES = ['https://www.googleapis.com/auth/drive']
 FILE_NAME = 'example.txt'
 
+
+
+
 # Authenticate with Google using your service account key file
 creds = service_account.Credentials.from_service_account_file(
     KEY_FILE_LOCATION, scopes=SCOPES)
