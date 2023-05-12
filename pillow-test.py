@@ -25,12 +25,19 @@ def loop():
 	count = 0
 	while True:
 		voiceValue = ADC.read(0)
-		if voiceValue:
-			#print ("Value:", voiceValue)
-			if voiceValue < 50:
-				print("\n--Sound Event! (count, value)", count, voiceValue)
-				soundAction()
-				count += 1
+		pressureValue = ADC.read(1)
+		
+		if pressureValue:
+			if pressureValue > 50:
+				GPIO.output(17, GPIO.HIGH)  # Set pin to HIGH to turn on led
+				print ("Pressure:", pressureValue)
+			else:
+				GPIO.output(17, GPIO.LOW)
+			
+		if voiceValue < 50:
+			print("\n--Sound Event! (count, value)", count, voiceValue)
+			soundAction()
+			count += 1
 
 if __name__ == '__main__':
 	try:
