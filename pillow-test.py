@@ -6,8 +6,12 @@ from datetime import datetime
 
 # IO settings
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(17, GPIO.OUT)   # Set pins' mode is output
+GPIO.setup(17, GPIO.OUT)   # Dual LED RED
+GPIO.setup(27, GPIO.OUT)   # Dual LED GREEN
+
 GPIO.output(17, GPIO.LOW)  # Set pins to LOW(0V) to off led
+GPIO.output(27, GPIO.LOW)  # Set pins to LOW(0V) to off led
+
 
 
 def setup():
@@ -15,9 +19,9 @@ def setup():
 	
 def soundAction():
 	print("@: ", datetime.now())
-	GPIO.output(17, GPIO.HIGH)  # Set pin to HIGH to turn on led
+	GPIO.output(27, GPIO.HIGH)  # Set pin to HIGH to turn on led
 	time.sleep(0.5)
-	GPIO.output(17, GPIO.LOW)  # Set pin to LOW to turn off led
+	GPIO.output(27, GPIO.LOW)  # Set pin to LOW to turn off led
 
 
 
@@ -45,5 +49,7 @@ if __name__ == '__main__':
 		loop()
 	except KeyboardInterrupt: 
 		GPIO.output(17, GPIO.LOW)  # Set pin to off
+		GPIO.output(27, GPIO.LOW)  # Set pin to off
+
 
 		pass	
