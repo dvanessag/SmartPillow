@@ -32,7 +32,7 @@ def loop():
 		pressureValue = ADC.read(1)
 		
 		if pressureValue:
-			if pressureValue > 50:
+			if pressureValue > 30:
 				GPIO.output(17, GPIO.HIGH)  # Set pin to HIGH to turn on led
 				print ("Pressure:", pressureValue)
 			else:
