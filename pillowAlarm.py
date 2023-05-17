@@ -7,6 +7,7 @@ import time
 import RPi.GPIO as GPIO
 import PCF8591 as ADC
 
+
 # PIN SETUP (LOCATION ON EXTENSION BOARD)
 RoAPin = 16    # CLK Pin
 RoBPin = 20    # DT Pin
@@ -15,49 +16,36 @@ BtnPin = 21    # Button Pin
 
 
 # function takes in set time, sleeps until that time, then activates alarm
-def Alarm(time):
-    # get current time
-    now = datetime.now()
-    current_hour = now.hour
-    current_minute = now.minute
+def Alarm(alarmTime):
+    print("Alarm activated at ", alarmTime, "\n\n")
+    while True:
+        # check to see if time is current time
+        # if so, activate alarm
+        now = datetime.now()
+        if now == alarmTime:
+            # activate alarm
+            print("Alarm activated at ", alarmTime, "\n\n")
+            # turn off alarm
+            break
+        else:
+            print("alarm thread sleeping")
+            time.sleep(5)
 
-    # get alarm hour and minute
-    alarm_hour = time.hour
-    alarm_minute = time.minute
-
-    # calculate time difference
-    hour_diff = alarm_hour - current_hour
-    minute_diff = alarm_minute - current_minute
-
-    # convert time difference to seconds
-    hour_diff = hour_diff * 3600
-    minute_diff = minute_diff * 60
-
-    # calculate total time difference
-    total_diff = hour_diff + minute_diff
-
-    # sleep until alarm time
-    time.sleep(total_diff)
-
-    # CHANGE THIS TO WHATEVER PIN ACTIVATIONS YOU WANT
-    # activate alarm
-    GPIO.output(17, GPIO.HIGH)
-    # sleep for 1 second
-    time.sleep(1)
-    # deactivate alarm
-    GPIO.output(17, GPIO.LOW)
-
+def SensorTracking():
+    # import sensorLogic.py methods
+    with open("sensorLogic.py") as f:
+        exec(f.read(), globals())
 
 # this acitvates when user presses button and confirms time.
 # runs alarm thread
 # runs sensor tracking thread
-def ActivateAlarm(time):
+def ActivateAlarm(alarmTime):
     # This will take confirmed time, make sure it is valid, then run alarm
     # thread and sensor tracking thread
 
     os.system('clear') # clear screen
     print("\nPillow Alarm Clock.\n-------------------\n\n")
-    print("Alarm will activate at ", time, "\n\n")
+    print("Alarm will activate at ", alarmTime, "\n\n")
 
     print("Activating Pressure sensor tracking...\n")
     print("Activating Noise Sensor tracking...\n\n")
@@ -69,12 +57,12 @@ def ActivateAlarm(time):
 
 
     # create thread for alarm
-    # alarm_thread = threading.Thread(target=Alarm, args=(alarm_time,))
-    # alarm_thread.start()
+    alarm_thread = threading.Thread(target=Alarm, args=(alarmTime, ))
+    alarm_thread.start()
 
-    # # create thread for sensor tracking
-    # sensor_thread = threading.Thread(target=SensorTracking)
-    # sensor_thread.start()
+    # create thread for sensor tracking
+    sensor_thread = threading.Thread(target=SensorTracking)
+    sensor_thread.start()
 
 
 
@@ -92,13 +80,13 @@ def setup():
     GPIO.setup(BtnPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 
-def inputDisplay(time):
+def inputDisplay(alarmTime):
     os.system('clear') # clear screen
     print("\nPillow Alarm Clock.\n-------------------\n\n")
     print("Please select a time for your alarm by rotating the encoder. \n")
     print("Press the endoder down to confirm your selection. \n")
 
-    print("Set Alarm Time: ", time)
+    print("Set Alarm Time: ", alarmTime)
 
 def inputLoop():
     times = ['%s:%s%s' % (h, m, ap) for ap in ('am', 'pm') for h in ([12] + list(range(1,12))) for m in ('00', '30')]

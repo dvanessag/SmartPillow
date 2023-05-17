@@ -16,14 +16,12 @@ GPIO.output(27, GPIO.LOW)  # Set pins to LOW(0V) to off led
 
 def setup():
 	ADC.setup(0x48)
-	
-def soundAction():
+
+def soundevent():
 	print("@: ", datetime.now())
 	GPIO.output(27, GPIO.HIGH)  # Set pin to HIGH to turn on led
 	time.sleep(0.5)
 	GPIO.output(27, GPIO.LOW)  # Set pin to LOW to turn off led
-
-
 
 def loop():
 	count = 0
@@ -40,7 +38,7 @@ def loop():
 			
 		if voiceValue < 50:
 			print("\n--Sound Event! (count, value)", count, voiceValue)
-			soundAction()
+			soundevent()
 			count += 1
 
 if __name__ == '__main__':
