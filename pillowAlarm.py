@@ -1,9 +1,10 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import deque
 import os
 import threading
 import time
 
+# RPI Sensor Imports
 import RPi.GPIO as GPIO
 import PCF8591 as ADC
 
@@ -13,28 +14,50 @@ RoAPin = 16    # CLK Pin
 RoBPin = 20    # DT Pin
 BtnPin = 21    # Button Pin
 
-
+#converts user selected time string to datetime object
+def convert_time_string(time_str):
+    time_format = "%I:%M%p"
+    datetime_obj = datetime.strptime(time_str, time_format)
+    return datetime_obj.time()
 
 # function takes in set time, sleeps until that time, then activates alarm
 def Alarm(alarmTime):
-    print("Alarm activated at ", alarmTime, "\n\n")
+    current_time = datetime.now().time()
+    alarmTime = convert_time_string(alarmTime)
+
+    # if alarm time is less than current time, set alarm for tomorrow
+    if alarmTime <= current_time:
+        tomorrow = datetime.now() + timedelta(days=1)
+        alarmTime = datetime.combine(tomorrow.date(), alarmTime)
+    else:
+        alarmTime = datetime.combine(datetime.now().date(), alarmTime)
+
+
+    print("Alarm set for:", alarmTime.strftime("%a %d @ %I:%M%p"), "\n")
+    print("Hold down the encoder to deactivate the alarm.\n\n")
+
+    time.sleep(0.5) # timing safety for encoder press (prevents double press)
+
     while True:
+        if GPIO.input(BtnPin) == GPIO.LOW: # Check whether the button is pressed or not.
+            print("\n\nAlarm deactivated.\n\n")
+            break
         # check to see if time is current time
         # if so, activate alarm
         now = datetime.now()
-        if now == alarmTime:
+        if now >= alarmTime:
             # activate alarm
-            print("Alarm activated at ", alarmTime, "\n\n")
-            # turn off alarm
+            print("ALARM!!! ", alarmTime, "\n\n")
+    
             break
         else:
-            print("alarm thread sleeping")
-            time.sleep(5)
+            time.sleep(1)
 
 def SensorTracking():
     # import sensorLogic.py methods
     with open("sensorLogic.py") as f:
         exec(f.read(), globals())
+
 
 # this acitvates when user presses button and confirms time.
 # runs alarm thread
@@ -45,24 +68,16 @@ def ActivateAlarm(alarmTime):
 
     os.system('clear') # clear screen
     print("\nPillow Alarm Clock.\n-------------------\n\n")
-    print("Alarm will activate at ", alarmTime, "\n\n")
-
-    print("Activating Pressure sensor tracking...\n")
-    print("Activating Noise Sensor tracking...\n\n")
-
-    print("Press down the encoder to deactivate alarm.\n\n")
-
-    #check to see if time set is valid for today, or change to tomorrow
-    now = datetime.now()
+    print("Activating sensor tracking...\n")
 
 
-    # create thread for alarm
-    alarm_thread = threading.Thread(target=Alarm, args=(alarmTime, ))
-    alarm_thread.start()
-
-    # create thread for sensor tracking
-    sensor_thread = threading.Thread(target=SensorTracking)
+    # create new thread for sensor tracking
+    # daemon is true so when main program exits, this thread will exit
+    sensor_thread = threading.Thread(target=SensorTracking, daemon=True)
     sensor_thread.start()
+
+    # Main thread runs alarm logic
+    Alarm(alarmTime)
 
 
 
@@ -89,9 +104,9 @@ def inputDisplay(alarmTime):
     print("Set Alarm Time: ", alarmTime)
 
 def inputLoop():
-    times = ['%s:%s%s' % (h, m, ap) for ap in ('am', 'pm') for h in ([12] + list(range(1,12))) for m in ('00', '30')]
+    times = ['%s:%s%s' % (h, m, ap) for ap in ('am', 'pm') for h in ([12] + list(range(1,12))) for m in ('00','15','30','45')]
     d = deque(times); # rotatable list for potentiometer input
-    d.rotate(-16) # set initial time to 12:00am
+    d.rotate(-32) # set initial time to 08:00am
 
     inputDisplay(d[0]) # print current time to screen
 

@@ -4,50 +4,78 @@ import RPi.GPIO as GPIO
 import time
 from datetime import datetime
 
-# IO settings
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(17, GPIO.OUT)   # Dual LED RED
-GPIO.setup(27, GPIO.OUT)   # Dual LED GREEN
+from connection import iothub_send_msg, init_connection
 
-GPIO.output(17, GPIO.LOW)  # Set pins to LOW(0V) to off led
-GPIO.output(27, GPIO.LOW)  # Set pins to LOW(0V) to off led
-
+#IO LOCATION VARIABLES
+REDLED = 17
+GREENLED = 27
+SOUNDSENSOR = 0    # Sound sensor is on ADC channel 0
+PRESSURESENSOR = 1 # Pressure sensor is on ADC channel 1
 
 
 def setup():
-	ADC.setup(0x48)
+	init_connection() # Connect to Azure IoT Hub
 
-def soundevent():
-	print("@: ", datetime.now())
-	GPIO.output(27, GPIO.HIGH)  # Set pin to HIGH to turn on led
+	ADC.setup(0x48) # Analogue to digital IO for sound sensor
+	# IO settings
+	GPIO.setmode(GPIO.BCM)
+	GPIO.setup(REDLED, GPIO.OUT)   # Dual LED RED
+	GPIO.setup(GREENLED, GPIO.OUT)   # Dual LED GREEN
+
+
+def sendEvent(eventType, dataType, data):
+	eventTime = datetime.now()
+
+	iothub_send_msg(eventType, eventTime, dataType, data)
+
 	time.sleep(0.5)
-	GPIO.output(27, GPIO.LOW)  # Set pin to LOW to turn off led
 
-def loop():
+def sensorloop():
 	count = 0
+	pressureBool = False
+
+	pressureTotalTime = 0.0
+	pressureStartTime = 0.0
+
 	while True:
-		voiceValue = ADC.read(0)
-		pressureValue = ADC.read(1)
+		voiceValue = ADC.read(SOUNDSENSOR)
+		pressureValue = ADC.read(PRESSURESENSOR)
 		
-		if pressureValue:
-			if pressureValue > 30:
-				GPIO.output(17, GPIO.HIGH)  # Set pin to HIGH to turn on led
-				print ("Pressure:", pressureValue)
-			else:
-				GPIO.output(17, GPIO.LOW)
+		# Pressure logic:
+		# Will send data if pressure is taken off of sensor (disturbance)
+		if pressureValue > 30:
+			if pressureBool == False:
+				pressureStartTime = time.time()
+
+			pressureBool = True 
+			GPIO.output(GREENLED, GPIO.HIGH)  # Set pin to HIGH to turn on led
+
+		elif pressureValue < 30 and pressureBool == True:
+			# Calculate time elapsed since pressureBool was set to True
+			elapsed_time = time.time() - pressureStartTime
+			pressureTotalTime += elapsed_time
+
+			sendEvent("pressure", "timeElapsed", pressureTotalTime)
+
+			pressureBool = False
+			GPIO.output(GREENLED, GPIO.LOW)
+
+		else:
+			pressureBool = False
+			GPIO.output(GREENLED, GPIO.LOW)
 			
+		# Sound logic:
+		# Will send data if sound less than threshold is detected
 		if voiceValue < 50:
-			print("\n--Sound Event! (count, value)", count, voiceValue)
-			soundevent()
 			count += 1
+			sendEvent("sound", "count", count)
+
 
 if __name__ == '__main__':
 	try:
 		setup()
-		loop()
+		sensorloop()
 	except KeyboardInterrupt: 
-		GPIO.output(17, GPIO.LOW)  # Set pin to off
-		GPIO.output(27, GPIO.LOW)  # Set pin to off
-
-
+		GPIO.output(REDLED, GPIO.LOW)  # Set pin to off
+		GPIO.output(GREENLED, GPIO.LOW)  # Set pin to off
 		pass	

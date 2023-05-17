@@ -28,31 +28,40 @@ from azure.iot.device import IoTHubDeviceClient, Message
 # az iot hub device-identity show-connection-string --hub-name {YourIoTHubName} --device-id MyNodeDevice --output table
 CONNECTION_STRING = "HostName=smartPillow.azure-devices.net;DeviceId=raspberryDi;SharedAccessKey=beaC6GNja8zSEFSRGYI3VlhKZK9zmzWxoTjO61Ixf4Q="
 
+
 # Define the JSON message to send to IoT Hub.
 PRESSURE1 = 20.0
 PRESSURE2 = 60
 NOISE = 40
-MSG_TXT = '{date}, {time}, Pressure Sensor 1: {pressure1}, Pressure Sensor 2: {pressure2}, Noise Sensor: {noise}'
+#MSG_TXT = '{date}, {time}, Pressure Sensor 1: {pressure1}, Pressure Sensor 2: {pressure2}, Noise Sensor: {noise}'
 
 ##option 2 : 
-'''
-MSG_TXT = 
-{{
-  "Pressure Sensor": {{
-    "Total time activated": {total_time_activated},
-    "Count of disturbances": {count_of_disturbances}
-  }},
-  "Noise Sensor": {{
-    "Count of total times activated": {count_of_times_activated},
-    "Noise occurrences": {noise_occurrences}
-  }}
 
-'''
+MSG_TXT = '{{ "time": {time}, "type": {dataType}, "value": {value} }}'
 
-def iothub_client_init():
+
+def init_connection():
     # Create an IoT Hub client
-    client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
-    return client
+    try:
+        global client 
+        client = IoTHubDeviceClient.create_from_connection_string(CONNECTION_STRING)
+        print("Connection to Azure IoT Hub successful")
+    except:
+        print("Error connecting to Azure IoT Hub")
+
+def iothub_send_msg(eventType, eventTime, dataType, data):
+    msgFormat = MSG_TXT.format(eventType=eventType, time=eventTime, dataType=dataType, value=data)
+    message = Message(msgFormat)
+  
+    message.custom_properties[eventType] = eventType
+
+    try:
+        client.send_message(message)
+        print("Message sent: {}".format(message))
+        time.sleep(2)
+    except Exception as e: 
+        print("Azure message error: ", e)
+
 
 def iothub_client_telemetry_sample_run():
 
@@ -86,4 +95,4 @@ def iothub_client_telemetry_sample_run():
 if __name__ == '__main__':
     print ( "IoT Hub Samrt Pillow " )
     print ( "Press Ctrl-C to exit" )
-    iothub_client_telemetry_sample_run()
+    #iothub_client_telemetry_sample_run()
