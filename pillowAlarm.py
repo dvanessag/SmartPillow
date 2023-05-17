@@ -8,11 +8,13 @@ import time
 import RPi.GPIO as GPIO
 import PCF8591 as ADC
 
-
 # PIN SETUP (LOCATION ON EXTENSION BOARD)
 RoAPin = 16    # CLK Pin
 RoBPin = 20    # DT Pin
 BtnPin = 21    # Button Pin
+
+REDLED = 17    # Dual LED RED
+BUZZER = 18    # Buzzer Pin
 
 #converts user selected time string to datetime object
 def convert_time_string(time_str):
@@ -46,9 +48,25 @@ def Alarm(alarmTime):
         # if so, activate alarm
         now = datetime.now()
         if now >= alarmTime:
+            os.system('clear') # clear screen
+            print("ALARM!!! ", alarmTime, "\n")
+            print("Hold down the encoder to deactivate the alarm.\n\n")
+
             # activate alarm
-            print("ALARM!!! ", alarmTime, "\n\n")
-    
+            buzz.start(50) # start buzzer
+            while True:
+                GPIO.output(REDLED, GPIO.HIGH)  
+                buzz.ChangeFrequency(440)	
+                time.sleep(0.5)		
+                
+                GPIO.output(REDLED, GPIO.LOW)  
+                buzz.ChangeFrequency(329)	
+                time.sleep(0.5)	
+
+                if GPIO.input(BtnPin) == GPIO.LOW: # Check whether the button is pressed or not.
+                    break	
+
+            buzz.stop()
             break
         else:
             time.sleep(1)
@@ -85,6 +103,7 @@ def setup():
     ADC.setup(0x48)
 
     # IO settings
+    GPIO.setwarnings(False)
     GPIO.setmode(GPIO.BCM)     # Numbers GPIOs by physical location (# location on board)
     GPIO.setup(17, GPIO.OUT)   # Dual LED RED
     GPIO.setup(27, GPIO.OUT)   # Dual LED GREEN
@@ -93,6 +112,12 @@ def setup():
     GPIO.setup(RoAPin, GPIO.IN)    # input mode
     GPIO.setup(RoBPin, GPIO.IN)
     GPIO.setup(BtnPin, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+    # Buzzer setup
+    GPIO.setup(BUZZER, GPIO.OUT)
+    global buzz 
+    buzz = GPIO.PWM(BUZZER, 440) # 440 Hz
+
 
 
 def inputDisplay(alarmTime):
@@ -104,9 +129,11 @@ def inputDisplay(alarmTime):
     print("Set Alarm Time: ", alarmTime)
 
 def inputLoop():
+    testtimes = ['%s:%02d%s' % (h, m, ap) for ap in ('am', 'pm') for h in ([12] + list(range(1, 12))) for m in range(0, 60)]
     times = ['%s:%s%s' % (h, m, ap) for ap in ('am', 'pm') for h in ([12] + list(range(1,12))) for m in ('00','15','30','45')]
-    d = deque(times); # rotatable list for potentiometer input
-    d.rotate(-32) # set initial time to 08:00am
+    d = deque(testtimes); # rotatable list for potentiometer input
+    #d.rotate(-32) # set initial time to 08:00am
+    d.rotate(120) 
 
     inputDisplay(d[0]) # print current time to screen
 
