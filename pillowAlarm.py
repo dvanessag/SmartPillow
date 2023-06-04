@@ -133,7 +133,7 @@ def inputLoop():
     times = ['%s:%s%s' % (h, m, ap) for ap in ('am', 'pm') for h in ([12] + list(range(1,12))) for m in ('00','15','30','45')]
     d = deque(testtimes); # rotatable list for potentiometer input
     #d.rotate(-32) # set initial time to 08:00am
-    d.rotate(120) 
+    d.rotate(-570) 
 
     inputDisplay(d[0]) # print current time to screen
 

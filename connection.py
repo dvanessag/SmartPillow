@@ -57,7 +57,7 @@ def iothub_send_msg(eventType, eventTime, dataType, data):
 
     try:
         client.send_message(message)
-        print("Message sent: {}".format(message))
+        #print("Message sent: {}".format(message))
         time.sleep(2)
     except Exception as e: 
         print("Azure message error: ", e)

@@ -58,7 +58,7 @@ def sensorloop():
 		pressureValue = ADC.read(PRESSURESENSOR)
 
 		#only print if 5 seconds have passes
-		if time.time() - lastPrintTime >= 5:
+		if time.time() - lastPrintTime >= 45:
 			lastPrintTime = time.time()
 			printTemperature()
 
@@ -77,7 +77,8 @@ def sensorloop():
 			elapsed_time = time.time() - pressureStartTime
 			pressureTotalTime += elapsed_time
 
-			#sendEvent("pressure", "timeElapsed", pressureTotalTime)
+			print("Pressure detected. Total Time: " + str(pressureTotalTime))
+			sendEvent("pressure", "timeElapsed", pressureTotalTime)
 
 			pressureBool = False
 			GPIO.output(GREENLED, GPIO.LOW)
@@ -90,7 +91,8 @@ def sensorloop():
 		# Will send data if sound less than threshold is detected
 		if voiceValue < 50:
 			count += 1
-			#sendEvent("sound", "count", count)
+			print("Sound detected. Total: " + str(count))
+			sendEvent("sound", "count", count)
 
 
 if __name__ == '__main__':
